@@ -1,0 +1,68 @@
+import { LLMProvider, PromptBuilder } from '@onboarding/llm';
+import { VectorStore } from './vectorStore.js';
+import { Chunk } from './chunking.js';
+
+/**
+ * Chat response with sources
+ */
+export interface ChatResponse {
+  answer: string;
+  sources: Chunk[];
+}
+
+/**
+ * Chat Service - Implements RAG pattern
+ *
+ * RAG = Retrieval Augmented Generation
+ * 1. Retrieve relevant docs from vector store
+ * 2. Augment user query with retrieved context (XML-formatted)
+ * 3. Generate answer using LLM with context
+ *
+ * Now uses dependency injection:
+ * - LLMProvider: Easy to swap LLMs (Ollama, OpenAI, Claude)
+ * - PromptBuilder: XML-formatted prompts for clarity
+ */
+export class ChatService {
+  private llmProvider: LLMProvider;
+  private vectorStore: VectorStore;
+  private promptBuilder: PromptBuilder;
+  private topK = 5; // Number of chunks to retrieve
+
+  constructor(vectorStore: VectorStore, llmProvider: LLMProvider) {
+    this.vectorStore = vectorStore;
+    this.llmProvider = llmProvider;
+    this.promptBuilder = new PromptBuilder();
+  }
+
+  /**
+   * Ask a question and get an answer grounded in your documentation
+   *
+   * This is the core RAG implementation
+   */
+  async ask(question: string): Promise<ChatResponse> {
+    console.log(`\n🔍 Question: "${question}"\n`);
+
+    // Step 1: RETRIEVAL - Find relevant documentation chunks
+    const sources = await this.vectorStore.search(question, this.topK);
+
+    if (sources.length === 0) {
+      return {
+        answer: "I don't have any documentation to answer that question. Please add some documents first.",
+        sources: [],
+      };
+    }
+
+    // Step 2: AUGMENTATION - Build XML-formatted prompt with context
+    const prompt = this.promptBuilder.buildRAGPrompt(question, sources);
+
+    // Step 3: GENERATION - Ask LLM with context
+    console.log('🤖 Generating answer...\n');
+
+    const answer = await this.llmProvider.generate(prompt);
+
+    return {
+      answer,
+      sources,
+    };
+  }
+}
