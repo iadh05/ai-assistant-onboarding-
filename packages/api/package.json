@@ -1,0 +1,29 @@
+{
+  "name": "@onboarding/api",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start:documents": "node dist/services/document-service.js",
+    "start:chat": "node dist/services/chat-service.js",
+    "start:system": "node dist/services/system-service.js",
+    "start:gateway": "node dist/gateway/grpc-gateway.js",
+    "test:gateway": "node dist/test-gateway.js",
+    "start": "echo 'Use: npm run start:documents, start:chat, start:system, start:gateway'"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.12.0",
+    "@grpc/proto-loader": "^0.7.13",
+    "@onboarding/contracts": "file:../contracts",
+    "@onboarding/core": "file:../core",
+    "@onboarding/llm": "file:../llm",
+    "dotenv": "^17.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.3"
+  }
+}

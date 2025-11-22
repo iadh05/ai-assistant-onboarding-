@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package onboarding.chatbot.v1;
+
+// Document management service (backend microservice)
+service DocumentService {
+  // Add documents to the vector store
+  rpc AddDocuments (AddDocumentsRequest) returns (AddDocumentsResponse);
+}
+
+// Chat/RAG service (backend microservice)
+service ChatService {
+  // Ask a question and get an answer with sources
+  rpc AskQuestion (QuestionRequest) returns (AnswerResponse);
+}
+
+// System/health service (backend microservice)
+service SystemService {
+  // Health check
+  rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// Request message for asking a question
+message QuestionRequest {
+  string question = 1;
+  int32 top_k = 2; // Optional, default 5
+}
+
+// Response message with answer and sources
+message AnswerResponse {
+  string answer = 1;
+  repeated DocumentSource sources = 2;
+}
+
+// Document source information
+message DocumentSource {
+  string chunk_id = 1;
+  string text = 2;
+  string source = 3;
+  string heading = 4;
+}
+
+// Request to add documents
+message AddDocumentsRequest {
+  repeated Document documents = 1;
+}
+
+message Document {
+  string content = 1;
+  string source = 2; // filename
+}
+
+// Response after adding documents
+message AddDocumentsResponse {
+  int32 chunks_added = 1;
+  string message = 2;
+}
+
+// Health check messages
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;
+  string llm_model = 2;
+  string embedding_model = 3;
+}

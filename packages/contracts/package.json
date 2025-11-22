@@ -1,0 +1,16 @@
+{
+  "name": "@onboarding/contracts",
+  "version": "1.0.0",
+  "description": "Shared API contracts (Protocol Buffers) for the onboarding chatbot",
+  "type": "module",
+  "main": "proto/chat.proto",
+  "files": [
+    "proto/**/*.proto"
+  ],
+  "keywords": [
+    "protobuf",
+    "grpc",
+    "contracts",
+    "api"
+  ]
+}
