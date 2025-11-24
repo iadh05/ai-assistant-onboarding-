@@ -6,11 +6,16 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "concurrently \"npm:dev:api\" \"npm:dev:web\" --names \"API,WEB\" --prefix-colors \"blue,green\"",
+    "dev:api": "npm run dev:all --workspace=@onboarding/api",
+    "dev:web": "npm run dev --workspace=@onboarding/web",
     "build": "turbo run build",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "start:api": "npm run start:all --workspace=@onboarding/api",
+    "start:web": "npm run start --workspace=@onboarding/web"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "turbo": "^2.0.0",
     "typescript": "^5.3.0"
   }
