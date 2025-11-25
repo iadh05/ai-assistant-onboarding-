@@ -48,10 +48,12 @@ const chatServiceImpl = {
       const { question } = call.request;
       console.log(`[Chat Service] Question: ${question}`);
 
-      // Reload vector store from disk to get latest documents
-      await vectorStore.load().catch(() => {
-        console.log('[Chat Service] No vector store found');
-      });
+      // Smart reload: only reload if file has changed (checks mtime)
+      // This avoids expensive disk I/O on every query
+      const reloaded = await vectorStore.reloadIfChanged();
+      if (reloaded) {
+        console.log(`[Chat Service] Vector store reloaded (${vectorStore.getChunkCount()} chunks)`);
+      }
 
       const response = await chatService.ask(question);
 

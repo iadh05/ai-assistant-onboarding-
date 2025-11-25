@@ -8,3 +8,6 @@ export type { Chunk } from './chunking.js';
 export { VectorStore } from './vectorStore.js';
 
 export { cosineSimilarity } from './utils/similarity.js';
+
+// Cache exports
+export { LRUCache, QueryCache, EmbeddingCache, type CacheStats } from './cache/index.js';

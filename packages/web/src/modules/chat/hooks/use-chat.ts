@@ -33,16 +33,10 @@ export const useAskQuestion = () => {
         top_k: topK,
       };
 
-      // Call API
+      // Call API (timeout is handled by axios client - 30s default)
       const response = await chatApi.askQuestion(request);
 
-      // Optional: Filter low-score sources
-      const filteredSources = response.sources.filter(source => source.score > 0.1);
-
-      return {
-        ...response,
-        sources: filteredSources,
-      };
+      return response;
     },
   });
 };

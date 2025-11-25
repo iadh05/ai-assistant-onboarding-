@@ -1,6 +1,6 @@
 # Onboarding Chatbot - Project Plan
 
-> **Status**: Planning Phase
+> **Status**: ✅ Core RAG System Complete - Ready for CLI
 > **Last Updated**: 2025-11-22
 > **Learning Focus**: Understanding RAG (Retrieval Augmented Generation) from scratch
 
@@ -23,15 +23,17 @@ An AI-powered onboarding chatbot that:
 
 ### Learning Objectives
 By the end of this project, you'll understand:
-- [ ] What vector embeddings are and why they matter
-- [ ] How semantic search works (finding similar meaning, not just keywords)
-- [ ] The RAG pattern (Retrieval Augmented Generation)
-- [ ] Working with local LLMs (Ollama)
-- [ ] Chunking strategies for documents
-- [ ] Building modular AI systems (separation of core logic and UI)
+- [x] What vector embeddings are and why they matter
+- [x] How semantic search works (finding similar meaning, not just keywords)
+- [x] The RAG pattern (Retrieval Augmented Generation)
+- [x] Working with local LLMs (Ollama)
+- [x] Chunking strategies for documents
+- [x] Building modular AI systems (separation of core logic and UI)
+- [x] **Provider pattern for LLM flexibility**
+- [x] **XML-based prompt engineering**
 - [ ] Building terminal UIs with React Ink
-- [ ] TypeScript for AI applications (typing embeddings, vectors, LLM responses)
-- [ ] Turborepo monorepo architecture
+- [x] TypeScript for AI applications (typing embeddings, vectors, LLM responses)
+- [x] Turborepo monorepo architecture
 
 ---
 
@@ -82,39 +84,83 @@ Display answer + sources in terminal
 
 ## 📁 Project Structure (Turborepo + TypeScript)
 
+### Current Architecture (✅ Implemented)
+
 ```
 onboarding-chatbot/
 │
-├── PLAN.md                          # This file - our planning document
-├── README.md                        # Project overview and setup instructions
-├── package.json                     # Root package.json
-├── turbo.json                       # Turborepo configuration
-├── tsconfig.json                    # Base TypeScript config
+├── PLAN.md                          # This file - project plan
+├── PROGRESS.md                      # ✅ Learning progress tracker
+├── FUTURE_IMPROVEMENTS.md           # ✅ Planned enhancements
+├── .gitignore                       # ✅ Git ignore rules
+├── package.json                     # ✅ Root package.json
+├── turbo.json                       # ✅ Turborepo configuration
+├── tsconfig.json                    # ✅ Base TypeScript config
+├── .env                             # ✅ Environment configuration
+├── .env.example                     # ✅ Environment template
 │
 ├── packages/
 │   │
-│   ├── core/                        # Core RAG engine package
+│   ├── contracts/                   # ✅ Shared API contracts
 │   │   ├── package.json
+│   │   └── proto/
+│   │       └── chat.proto           # ✅ Protocol Buffer definitions
+│   │                                # ✅ 3 services: Document, Chat, System
+│   │
+│   ├── llm/                         # ✅ LLM provider package
+│   │   ├── package.json             # ✅ Ollama dependency
+│   │   ├── tsconfig.json            # ✅ With declaration: true
+│   │   ├── src/
+│   │   │   ├── index.ts             # ✅ Exports all providers
+│   │   │   ├── PromptBuilder.ts     # ✅ XML prompt formatting
+│   │   │   │
+│   │   │   └── providers/
+│   │   │       ├── LLMProvider.ts           # ✅ Interface
+│   │   │       ├── EmbeddingProvider.ts     # ✅ Interface
+│   │   │       │
+│   │   │       └── ollama/                  # ✅ Ollama implementations
+│   │   │           ├── OllamaLLMProvider.ts
+│   │   │           └── OllamaEmbeddingProvider.ts
+│   │   │
+│   │   └── dist/                    # ✅ Compiled with .d.ts files
+│   │
+│   ├── core/                        # ✅ Core RAG engine package
+│   │   ├── package.json             # ✅ Depends on @onboarding/llm
 │   │   ├── tsconfig.json
 │   │   ├── src/
-│   │   │   ├── index.ts             # Export all core modules
-│   │   │   ├── config.ts            # Configuration types & defaults
-│   │   │   ├── types.ts             # Shared TypeScript types
+│   │   │   ├── chunking.ts          # ✅ Document chunking service
+│   │   │   ├── vectorStore.ts       # ✅ Vector storage & search
+│   │   │   ├── chat.ts              # ✅ RAG chat service
 │   │   │   │
-│   │   │   ├── services/
-│   │   │   │   ├── documentLoader.ts    # Read and parse markdown
-│   │   │   │   ├── chunker.ts           # Split documents into chunks
-│   │   │   │   ├── embeddingService.ts  # Generate embeddings via Ollama
-│   │   │   │   ├── vectorStore.ts       # Store and search vectors
-│   │   │   │   └── chatService.ts       # RAG implementation
+│   │   │   ├── utils/
+│   │   │   │   └── similarity.ts    # ✅ Cosine similarity
 │   │   │   │
-│   │   │   └── utils/
-│   │   │       └── similarity.ts        # Cosine similarity calculation
+│   │   │   └── tests/               # ✅ Organized test files
+│   │   │       ├── test-embedding.ts
+│   │   │       ├── test-chunking.ts
+│   │   │       ├── test-vectorstore.ts
+│   │   │       └── test-chat.ts     # ✅ Full RAG pipeline test
 │   │   │
-│   │   └── dist/                    # Compiled TypeScript output
+│   │   └── dist/                    # ✅ Compiled TypeScript output
 │   │
-│   └── cli/                         # CLI application package
-│       ├── package.json             # Depends on @onboarding/core
+│   ├── api/                         # ✅ gRPC Microservices + Gateway
+│   │   ├── package.json             # ✅ Scripts for all services
+│   │   ├── tsconfig.json
+│   │   ├── src/
+│   │   │   ├── services/            # ✅ Backend microservices
+│   │   │   │   ├── document-service.ts  # ✅ Port 50051
+│   │   │   │   ├── chat-service.ts      # ✅ Port 50052
+│   │   │   │   └── system-service.ts    # ✅ Port 50053
+│   │   │   │
+│   │   │   ├── gateway/             # ✅ API Gateway
+│   │   │   │   └── grpc-gateway.ts  # ✅ Port 8080 (client entry point)
+│   │   │   │
+│   │   │   └── test-gateway.ts      # ✅ Gateway client test
+│   │   │
+│   │   └── dist/                    # ✅ Compiled TypeScript output
+│   │
+│   └── cli/                         # ⏳ CLI application package (TODO)
+│       ├── package.json             # To depend on @onboarding/core + @onboarding/llm
 │       ├── tsconfig.json
 │       ├── src/
 │       │   ├── index.tsx            # Entry point - start CLI app
@@ -127,11 +173,36 @@ onboarding-chatbot/
 │       │
 │       └── dist/                    # Compiled TypeScript output
 │
-└── docs/                            # Sample documentation files
+└── docs/                            # Sample documentation files (TODO)
     ├── getting-started.md
     ├── features.md
     └── faq.md
 ```
+
+### Key Architecture Decisions
+
+**✅ Provider Pattern**
+- Separated LLM infrastructure into `packages/llm`
+- Easy to swap providers (Ollama → OpenAI → Claude)
+- Clean dependency injection
+
+**✅ XML Prompts**
+- Structured prompt formatting
+- Clear section boundaries
+- Industry standard approach
+
+**✅ Test Organization**
+- All tests in `packages/core/src/tests/`
+- Organized by component
+- Full end-to-end RAG test working
+
+**✅ Microservices Architecture**
+- Separated single server into 3 backend microservices
+- Each service has single responsibility (SRP)
+- API Gateway provides single client entry point
+- Gateway proxies requests to backend services
+- Environment-based configuration for all service URLs
+- Protocol Buffers versioned: `onboarding.chatbot.v1`
 
 ---
 

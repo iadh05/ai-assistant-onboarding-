@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import { EmbeddingProvider } from '@onboarding/llm';
 import { Chunk } from './chunking.js';
 import { cosineSimilarity } from './utils/similarity.js';
+import { EmbeddingCache } from './cache/embedding-cache.js';
 
 /**
  * Stored chunk with embedding
@@ -16,15 +17,22 @@ interface StoredChunk extends Chunk {
  * Now uses EmbeddingProvider interface for flexibility:
  * - Easy to swap embedding models (Ollama, OpenAI, etc.)
  * - Dependency injection for testability
+ *
+ * Performance optimization:
+ * - Tracks file modification time to avoid unnecessary reloads
+ * - Only reloads from disk when the file has actually changed
  */
 export class VectorStore {
   private chunks: StoredChunk[] = [];
   private embeddingProvider: EmbeddingProvider;
   private storePath: string;
+  private lastModifiedTime: number = 0; // Track file modification time
+  private embeddingCache: EmbeddingCache; // Cache for query embeddings
 
   constructor(embeddingProvider: EmbeddingProvider, storePath = './vector-store.json') {
     this.embeddingProvider = embeddingProvider;
     this.storePath = storePath;
+    this.embeddingCache = new EmbeddingCache(500, 60 * 60 * 1000); // 500 embeddings, 1 hour TTL
   }
 
   /**
@@ -54,8 +62,14 @@ export class VectorStore {
       return [];
     }
 
-    // Convert query to embedding
-    const queryEmbedding = await this.embeddingProvider.generateEmbedding(query);
+    // Check cache first for query embedding
+    let queryEmbedding = this.embeddingCache.get(query);
+
+    if (!queryEmbedding) {
+      // Cache miss - generate and store
+      queryEmbedding = await this.embeddingProvider.generateEmbedding(query);
+      this.embeddingCache.set(query, queryEmbedding);
+    }
 
     // Calculate similarity for each chunk
     const results = this.chunks.map(chunk => ({
@@ -99,9 +113,65 @@ export class VectorStore {
     try {
       const data = await fs.readFile(this.storePath, 'utf-8');
       this.chunks = JSON.parse(data);
+
+      // Track the file's modification time
+      const stats = await fs.stat(this.storePath);
+      this.lastModifiedTime = stats.mtimeMs;
+
       console.log(`Loaded ${this.chunks.length} chunks from ${this.storePath}`);
     } catch (error) {
       console.log('No existing vector store found, starting fresh');
     }
+  }
+
+  /**
+   * Reload from disk only if the file has changed
+   * Returns true if reload was needed, false if skipped
+   */
+  async reloadIfChanged(): Promise<boolean> {
+    try {
+      const stats = await fs.stat(this.storePath);
+
+      // Only reload if file was modified since last load
+      if (stats.mtimeMs > this.lastModifiedTime) {
+        console.log('[VectorStore] File changed, reloading...');
+        await this.load();
+        return true;
+      }
+
+      // File hasn't changed, skip reload
+      return false;
+    } catch (error) {
+      // File doesn't exist - nothing to reload
+      return false;
+    }
+  }
+
+  /**
+   * Get the number of chunks currently stored
+   */
+  getChunkCount(): number {
+    return this.chunks.length;
+  }
+
+  /**
+   * Get embedding cache statistics
+   */
+  getEmbeddingCacheStats() {
+    return this.embeddingCache.getStats();
+  }
+
+  /**
+   * Get embedding cache hit rate
+   */
+  getEmbeddingCacheHitRate(): number {
+    return this.embeddingCache.getHitRate();
+  }
+
+  /**
+   * Clear embedding cache
+   */
+  clearEmbeddingCache(): void {
+    this.embeddingCache.clear();
   }
 }
