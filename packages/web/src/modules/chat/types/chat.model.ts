@@ -1,4 +1,3 @@
-// Chat-related types
 export interface Source {
   chunk_id: string;
   text: string;
@@ -9,7 +8,7 @@ export interface Source {
 export interface Message {
   role: 'user' | 'assistant';
   content: string;
-  sources?: Source[]; // Sources are only present for assistant messages
+  sources?: Source[];
 }
 
 export interface ChatResponse {

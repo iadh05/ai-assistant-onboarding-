@@ -1,7 +1,7 @@
 import { LLMProvider, PromptBuilder } from '@onboarding/llm';
+import { QueryCache, type CacheStats } from '@onboarding/cache';
 import { VectorStore } from './vectorStore.js';
 import { Chunk } from './chunking.js';
-import { QueryCache, type CacheStats } from './cache/index.js';
 
 /**
  * Chat response with sources
@@ -31,14 +31,14 @@ export class ChatService {
   private llmProvider: LLMProvider;
   private vectorStore: VectorStore;
   private promptBuilder: PromptBuilder;
-  private queryCache: QueryCache;
+  private queryCache: QueryCache<ChatResponse>;
   private topK = 5; // Number of chunks to retrieve
 
   constructor(vectorStore: VectorStore, llmProvider: LLMProvider) {
     this.vectorStore = vectorStore;
     this.llmProvider = llmProvider;
     this.promptBuilder = new PromptBuilder();
-    this.queryCache = new QueryCache(); // 100 entries, 30 min TTL
+    this.queryCache = new QueryCache<ChatResponse>(); // 100 entries, 30 min TTL
   }
 
   /**

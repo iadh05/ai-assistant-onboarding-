@@ -2,10 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { healthApi } from '../api/health.api';
 import type { HealthResponse } from '../types/health.model';
 
-/**
- * Health hooks - Business logic + React Query
- */
-
 export const useHealthCheck = (refetchInterval?: number) => {
   return useQuery<HealthResponse, Error>({
     queryKey: ['health'],
@@ -14,9 +10,6 @@ export const useHealthCheck = (refetchInterval?: number) => {
   });
 };
 
-/**
- * Helper functions for health status
- */
 export const healthHelpers = {
   isAllServicesHealthy: (healthResponse: HealthResponse): boolean => {
     const { services } = healthResponse;

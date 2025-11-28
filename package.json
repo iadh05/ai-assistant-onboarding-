@@ -6,7 +6,12 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm:dev:core\" \"npm:dev:llm\" \"npm:dev:api\" \"npm:dev:web\" --names \"CORE,LLM,API,WEB\" --prefix-colors \"yellow,magenta,blue,green\"",
+    "dev": "concurrently \"npm:dev:events\" \"npm:dev:cache\" \"npm:dev:core\" \"npm:dev:llm\" \"npm:dev:api\" \"npm:dev:web\" --names \"EVENTS,CACHE,CORE,LLM,API,WEB\" --prefix-colors \"cyan,red,yellow,magenta,blue,green\"",
+    "dev:split": "start \"Backend\" cmd /k npm run dev:backend && start \"Frontend\" cmd /k npm run dev:frontend",
+    "dev:backend": "concurrently \"npm:dev:events\" \"npm:dev:cache\" \"npm:dev:core\" \"npm:dev:llm\" \"npm:dev:api\" --names \"EVENTS,CACHE,CORE,LLM,API\" --prefix-colors \"cyan,red,yellow,magenta,blue\"",
+    "dev:frontend": "npm run dev --workspace=@onboarding/web",
+    "dev:events": "npm run dev --workspace=@onboarding/events",
+    "dev:cache": "npm run dev --workspace=@onboarding/cache",
     "dev:core": "npm run dev --workspace=@onboarding/core",
     "dev:llm": "npm run dev --workspace=@onboarding/llm",
     "dev:api": "npm run dev:all --workspace=@onboarding/api",

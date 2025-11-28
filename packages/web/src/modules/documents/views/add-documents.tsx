@@ -10,7 +10,6 @@ export const AddDocuments: React.FC = () => {
     e.preventDefault();
     if (!content.trim() || mutation.isPending) return;
 
-    // Send entire content as one document - let the chunking service split it by headings
     const documents = [content.trim()];
 
     mutation.mutate(documents, {

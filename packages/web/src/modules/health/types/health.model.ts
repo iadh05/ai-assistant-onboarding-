@@ -1,4 +1,3 @@
-// Health check types
 export interface HealthResponse {
   status: string;
   services: {

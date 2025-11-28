@@ -1,8 +1,8 @@
 import { promises as fs } from 'fs';
 import { EmbeddingProvider } from '@onboarding/llm';
+import { EmbeddingCache } from '@onboarding/cache';
 import { Chunk } from './chunking.js';
 import { cosineSimilarity } from './utils/similarity.js';
-import { EmbeddingCache } from './cache/embedding-cache.js';
 
 /**
  * Stored chunk with embedding
@@ -32,7 +32,7 @@ export class VectorStore {
   constructor(embeddingProvider: EmbeddingProvider, storePath = './vector-store.json') {
     this.embeddingProvider = embeddingProvider;
     this.storePath = storePath;
-    this.embeddingCache = new EmbeddingCache(500, 60 * 60 * 1000); // 500 embeddings, 1 hour TTL
+    this.embeddingCache = new EmbeddingCache(); // 500 embeddings, 24h TTL (default)
   }
 
   /**

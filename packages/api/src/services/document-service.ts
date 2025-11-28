@@ -3,8 +3,8 @@ import * as protoLoader from '@grpc/proto-loader';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { config } from 'dotenv';
-import { VectorStore } from '@onboarding/core';
-import { ChunkingService } from '@onboarding/core';
+import { VectorStore, ChunkingService } from '@onboarding/core';
+import { cacheEventBus } from '@onboarding/events';
 import { OllamaEmbeddingProvider } from '@onboarding/llm';
 
 // Load environment variables
@@ -59,6 +59,9 @@ const documentServiceImpl = {
 
       await vectorStore.save();
       console.log(`[Document Service] Added ${totalChunks} chunks`);
+
+      // Emit event to notify subscribers (e.g., ChatService) to clear cache
+      cacheEventBus.emitDocumentsChanged('DocumentService');
 
       callback(null, {
         chunks_added: totalChunks,

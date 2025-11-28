@@ -5,6 +5,7 @@ import * as protoLoader from '@grpc/proto-loader';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { config } from 'dotenv';
+import { handleGrpcError } from './errors';
 
 // Load environment variables
 const __filename = fileURLToPath(import.meta.url);
@@ -30,7 +31,7 @@ const DOCUMENT_SERVICE_URL = process.env.DOCUMENT_SERVICE_URL || 'localhost:5005
 const CHAT_SERVICE_URL = process.env.CHAT_SERVICE_URL || 'localhost:50052';
 const SYSTEM_SERVICE_URL = process.env.SYSTEM_SERVICE_URL || 'localhost:50053';
 
-console.log('🌐 REST Gateway connecting to backend services:');
+console.log('🌐 REST Gateway configuration:');
 console.log(`   📄 Document Service: ${DOCUMENT_SERVICE_URL}`);
 console.log(`   💬 Chat Service: ${CHAT_SERVICE_URL}`);
 console.log(`   ⚙️  System Service: ${SYSTEM_SERVICE_URL}`);
@@ -64,11 +65,21 @@ function promisifyGrpcCall(client: any, method: string, request: any): Promise<a
   });
 }
 
+// CORS configuration
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173';
+
+const corsOptions: cors.CorsOptions = {
+  origin: CORS_ORIGIN,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+};
+
 // Create Express app
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Request logging middleware
@@ -85,12 +96,8 @@ app.get('/api/health', async (req, res) => {
     console.log('[REST Gateway] Health check requested');
     const response = await promisifyGrpcCall(systemClient, 'healthCheck', {});
     res.json(response);
-  } catch (error: any) {
-    console.error('[REST Gateway] Health check failed:', error.message);
-    res.status(500).json({
-      error: 'Health check failed',
-      message: error.message
-    });
+  } catch (error) {
+    handleGrpcError(res, error, 'Health check failed');
   }
 });
 
@@ -98,9 +105,8 @@ app.get('/api/health', async (req, res) => {
 app.post('/api/chat', async (req, res) => {
   try {
     const { question, top_k = 5 } = req.body;
-
     if (!question) {
-      return res.status(400).json({ error: 'Question is required' });
+      return res.status(400).json({ error: 'Question is required', message: 'Please enter a question.' });
     }
 
     console.log(`[REST Gateway] Chat request: "${question}"`);
@@ -110,12 +116,8 @@ app.post('/api/chat', async (req, res) => {
     });
 
     res.json(response);
-  } catch (error: any) {
-    console.error('[REST Gateway] Chat request failed:', error.message);
-    res.status(500).json({
-      error: 'Chat request failed',
-      message: error.message
-    });
+  } catch (error) {
+    handleGrpcError(res, error, 'Chat request failed');
   }
 });
 
@@ -126,7 +128,8 @@ app.post('/api/documents', async (req, res) => {
 
     if (!content || !Array.isArray(content) || content.length === 0) {
       return res.status(400).json({
-        error: 'Content array is required and must not be empty'
+        error: 'Invalid content',
+        message: 'Please provide at least one document to add.'
       });
     }
 
@@ -143,12 +146,8 @@ app.post('/api/documents', async (req, res) => {
     });
 
     res.json(response);
-  } catch (error: any) {
-    console.error('[REST Gateway] Add documents failed:', error.message);
-    res.status(500).json({
-      error: 'Failed to add documents',
-      message: error.message
-    });
+  } catch (error) {
+    handleGrpcError(res, error, 'Failed to add documents');
   }
 });
 
@@ -168,11 +167,11 @@ function startRestGateway() {
 
   app.listen(PORT, HOST, () => {
     console.log(`\n🚀 REST API Gateway running on http://${HOST}:${PORT}`);
+    console.log(`   🔒 CORS Origin: ${CORS_ORIGIN}`);
     console.log(`   📍 Endpoints:`);
     console.log(`      GET  /api/health      - Health check`);
     console.log(`      POST /api/chat        - Ask a question`);
     console.log(`      POST /api/documents   - Add documents`);
-    console.log(`   🔗 Client connects to: http://localhost:${PORT}\n`);
   });
 }
 

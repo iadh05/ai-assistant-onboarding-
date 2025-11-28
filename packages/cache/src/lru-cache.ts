@@ -10,6 +10,8 @@
  * - Memory bounded (maxSize prevents OOM)
  * - Time bounded (TTL ensures freshness)
  * - Fast lookups (Map is O(1))
+ *
+ * Used by: Redis, Memcached, browser caches, CDNs
  */
 
 interface CacheEntry<T> {

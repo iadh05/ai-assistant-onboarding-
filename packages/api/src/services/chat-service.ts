@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { config } from 'dotenv';
 import { ChatService, VectorStore } from '@onboarding/core';
+import { cacheEventBus } from '@onboarding/events';
 import { OllamaLLMProvider, OllamaEmbeddingProvider } from '@onboarding/llm';
 
 // Load environment variables
@@ -36,6 +37,13 @@ const chatService = new ChatService(vectorStore, llmProvider);
 // Load existing vector store
 await vectorStore.load().catch(() => {
   console.log('[Chat Service] No existing vector store found');
+});
+
+// Subscribe to cache invalidation events
+// When documents change, clear the query cache to avoid stale answers
+cacheEventBus.onDocumentsChanged('ChatService', () => {
+  chatService.clearCache();
+  console.log('[ChatService] 🗑️ Cache cleared - documents changed');
 });
 
 // Chat service implementation

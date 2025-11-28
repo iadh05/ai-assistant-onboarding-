@@ -12,6 +12,11 @@ import { createHash } from 'crypto';
  * Cache key strategy:
  * - Hash the text content for consistent keys
  * - Different embedding models would need different caches
+ *
+ * TTL Consideration:
+ * - Embeddings are deterministic (same text = same embedding)
+ * - TTL can be long (24h+) since embeddings don't change
+ * - Only need to invalidate if embedding MODEL changes
  */
 
 export class EmbeddingCache {
@@ -20,9 +25,9 @@ export class EmbeddingCache {
   /**
    * Create an embedding cache
    * @param maxSize Max cached embeddings (default: 500)
-   * @param ttlMs Cache TTL in ms (default: 1 hour)
+   * @param ttlMs Cache TTL in ms (default: 24 hours - embeddings are stable)
    */
-  constructor(maxSize = 500, ttlMs = 60 * 60 * 1000) {
+  constructor(maxSize = 500, ttlMs = 24 * 60 * 60 * 1000) {
     this.cache = new LRUCache<number[]>(maxSize, ttlMs);
   }
 

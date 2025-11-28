@@ -1,9 +1,8 @@
 import { LRUCache, CacheStats } from './lru-cache.js';
-import { ChatResponse } from '../chat.js';
 import { createHash } from 'crypto';
 
 /**
- * Query Cache - Caches chat responses for identical questions
+ * Query Cache - Generic cache for query responses
  *
  * Why cache queries?
  * - LLM calls are expensive (time + cost)
@@ -13,10 +12,13 @@ import { createHash } from 'crypto';
  * Cache key strategy:
  * - Hash the normalized question for consistent keys
  * - Normalization: lowercase, trim, collapse whitespace
+ *
+ * NOTE: This is a generic cache. The response type T is provided by the consumer.
+ * Example: QueryCache<ChatResponse> for chat responses
  */
 
-export class QueryCache {
-  private cache: LRUCache<ChatResponse>;
+export class QueryCache<T = unknown> {
+  private cache: LRUCache<T>;
 
   /**
    * Create a query cache
@@ -24,7 +26,7 @@ export class QueryCache {
    * @param ttlMs Cache TTL in ms (default: 30 minutes)
    */
   constructor(maxSize = 100, ttlMs = 30 * 60 * 1000) {
-    this.cache = new LRUCache<ChatResponse>(maxSize, ttlMs);
+    this.cache = new LRUCache<T>(maxSize, ttlMs);
   }
 
   /**
@@ -45,7 +47,7 @@ export class QueryCache {
   /**
    * Get cached response for a question
    */
-  get(question: string): ChatResponse | undefined {
+  get(question: string): T | undefined {
     const key = this.generateKey(question);
     const cached = this.cache.get(key);
 
@@ -59,7 +61,7 @@ export class QueryCache {
   /**
    * Cache a response for a question
    */
-  set(question: string, response: ChatResponse): void {
+  set(question: string, response: T): void {
     const key = this.generateKey(question);
     this.cache.set(key, response);
     console.log(`[QueryCache] Cached: "${question.substring(0, 50)}..."`);

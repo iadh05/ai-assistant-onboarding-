@@ -1,18 +1,10 @@
 import { useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './core';
 import { Sidebar, type ViewMode } from './modules/global';
 import { Chat } from './modules/chat';
 import { AddDocuments } from './modules/documents';
 import { HealthCheck } from './modules/health';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-});
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewMode>('chat');
@@ -29,6 +21,7 @@ function App() {
         return <Chat />;
     }
   };
+
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -1,4 +1,3 @@
-// Documents-related types
 export interface AddDocumentsRequest {
   content: string[];
 }
