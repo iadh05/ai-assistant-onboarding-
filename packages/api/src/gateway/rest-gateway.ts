@@ -5,7 +5,7 @@ import * as protoLoader from '@grpc/proto-loader';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { config } from 'dotenv';
-import { handleGrpcError } from './errors';
+import { createHealthRoutes, createChatRoutes, createDocumentRoutes } from './routes/index.js';
 
 // Load environment variables
 const __filename = fileURLToPath(import.meta.url);
@@ -26,7 +26,7 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 const proto = (grpc.loadPackageDefinition(packageDefinition) as any)
   .onboarding.chatbot.v1;
 
-// Service URLs (backend microservices)
+// Service URLs
 const DOCUMENT_SERVICE_URL = process.env.DOCUMENT_SERVICE_URL || 'localhost:50051';
 const CHAT_SERVICE_URL = process.env.CHAT_SERVICE_URL || 'localhost:50052';
 const SYSTEM_SERVICE_URL = process.env.SYSTEM_SERVICE_URL || 'localhost:50053';
@@ -36,7 +36,7 @@ console.log(`   📄 Document Service: ${DOCUMENT_SERVICE_URL}`);
 console.log(`   💬 Chat Service: ${CHAT_SERVICE_URL}`);
 console.log(`   ⚙️  System Service: ${SYSTEM_SERVICE_URL}`);
 
-// Create gRPC clients to backend services
+// gRPC clients
 const documentClient = new proto.DocumentService(
   DOCUMENT_SERVICE_URL,
   grpc.credentials.createInsecure()
@@ -52,20 +52,16 @@ const systemClient = new proto.SystemService(
   grpc.credentials.createInsecure()
 );
 
-// Helper to promisify gRPC calls
 function promisifyGrpcCall(client: any, method: string, request: any): Promise<any> {
   return new Promise((resolve, reject) => {
     client[method](request, (error: any, response: any) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(response);
-      }
+      if (error) reject(error);
+      else resolve(response);
     });
   });
 }
 
-// CORS configuration
+// CORS config
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173';
 
 const corsOptions: cors.CorsOptions = {
@@ -75,83 +71,24 @@ const corsOptions: cors.CorsOptions = {
   credentials: true,
 };
 
-// Create Express app
+// Express app
 const app = express();
 
-// Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Request logging middleware
+// Request logging
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
 
-// REST API Routes
+// Mount routes
+app.use('/api/health', createHealthRoutes(systemClient, promisifyGrpcCall));
+app.use('/api/chat', createChatRoutes(chatClient, promisifyGrpcCall));
+app.use('/api/documents', createDocumentRoutes(documentClient, promisifyGrpcCall));
 
-// Health Check
-app.get('/api/health', async (req, res) => {
-  try {
-    console.log('[REST Gateway] Health check requested');
-    const response = await promisifyGrpcCall(systemClient, 'healthCheck', {});
-    res.json(response);
-  } catch (error) {
-    handleGrpcError(res, error, 'Health check failed');
-  }
-});
-
-// Ask Question (Chat)
-app.post('/api/chat', async (req, res) => {
-  try {
-    const { question, top_k = 5 } = req.body;
-    if (!question) {
-      return res.status(400).json({ error: 'Question is required', message: 'Please enter a question.' });
-    }
-
-    console.log(`[REST Gateway] Chat request: "${question}"`);
-    const response = await promisifyGrpcCall(chatClient, 'askQuestion', {
-      question,
-      top_k,
-    });
-
-    res.json(response);
-  } catch (error) {
-    handleGrpcError(res, error, 'Chat request failed');
-  }
-});
-
-// Add Documents
-app.post('/api/documents', async (req, res) => {
-  try {
-    const { content } = req.body;
-
-    if (!content || !Array.isArray(content) || content.length === 0) {
-      return res.status(400).json({
-        error: 'Invalid content',
-        message: 'Please provide at least one document to add.'
-      });
-    }
-
-    console.log(`[REST Gateway] Adding ${content.length} document(s)`);
-
-    // Transform array of strings to array of Document objects for gRPC
-    const documents = content.map((docContent, index) => ({
-      content: docContent,
-      source: `document-${index + 1}`,
-    }));
-
-    const response = await promisifyGrpcCall(documentClient, 'addDocuments', {
-      documents,
-    });
-
-    res.json(response);
-  } catch (error) {
-    handleGrpcError(res, error, 'Failed to add documents');
-  }
-});
-
-// Error handling middleware
+// Error handling
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('[REST Gateway] Unhandled error:', err);
   res.status(500).json({
@@ -169,9 +106,10 @@ function startRestGateway() {
     console.log(`\n🚀 REST API Gateway running on http://${HOST}:${PORT}`);
     console.log(`   🔒 CORS Origin: ${CORS_ORIGIN}`);
     console.log(`   📍 Endpoints:`);
-    console.log(`      GET  /api/health      - Health check`);
-    console.log(`      POST /api/chat        - Ask a question`);
-    console.log(`      POST /api/documents   - Add documents`);
+    console.log(`      GET  /api/health           - Health check`);
+    console.log(`      POST /api/chat             - Ask a question`);
+    console.log(`      POST /api/documents        - Add documents (JSON)`);
+    console.log(`      POST /api/documents/upload - Upload file (multipart)`);
   });
 }
 

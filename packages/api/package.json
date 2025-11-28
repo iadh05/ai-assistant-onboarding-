@@ -22,23 +22,10 @@
     "test:gateway": "node dist/test-gateway.js"
   },
   "dependencies": {
-    "@grpc/grpc-js": "^1.12.0",
-    "@grpc/proto-loader": "^0.7.13",
-    "@onboarding/cache": "file:../cache",
-    "@onboarding/contracts": "file:../contracts",
-    "@onboarding/core": "file:../core",
-    "@onboarding/events": "file:../events",
-    "@onboarding/llm": "file:../llm",
-    "dotenv": "^17.2.3",
-    "express": "^4.18.2",
-    "cors": "^2.8.5"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.2",
-    "@types/express": "^4.17.21",
-    "@types/cors": "^2.8.17",
-    "concurrently": "^8.2.2",
-    "tsx": "^4.7.0",
-    "typescript": "^5.7.3"
+    "@onboarding/cache": "*",
+    "@onboarding/contracts": "*",
+    "@onboarding/core": "*",
+    "@onboarding/events": "*",
+    "@onboarding/llm": "*"
   }
 }

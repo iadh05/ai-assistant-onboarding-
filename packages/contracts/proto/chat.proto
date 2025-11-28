@@ -6,6 +6,8 @@ package onboarding.chatbot.v1;
 service DocumentService {
   // Add documents to the vector store
   rpc AddDocuments (AddDocumentsRequest) returns (AddDocumentsResponse);
+  // Clear all documents from the vector store
+  rpc ClearDocuments (ClearDocumentsRequest) returns (ClearDocumentsResponse);
 }
 
 // Chat/RAG service (backend microservice)
@@ -53,6 +55,16 @@ message Document {
 // Response after adding documents
 message AddDocumentsResponse {
   int32 chunks_added = 1;
+  string message = 2;
+  repeated string document_ids = 3;
+}
+
+// Request to clear all documents
+message ClearDocumentsRequest {}
+
+// Response after clearing documents
+message ClearDocumentsResponse {
+  int32 chunks_removed = 1;
   string message = 2;
 }
 

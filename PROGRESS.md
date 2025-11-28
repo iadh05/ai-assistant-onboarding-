@@ -1,5 +1,35 @@
 # Learning Progress - Onboarding Chatbot
 
+## Session: 2025-11-25
+
+### ✅ Completed (Sprint 1 + Sprint 2 Partial)
+
+**Sprint 1 - Polish & UX:**
+- [x] S1-1: Fixed vector store reload performance (added `reloadIfChanged()` with mtime tracking)
+- [x] S1-2: Added sources display in chat UI (collapsible component)
+- [x] S1-3: Integrated conversation storage with localStorage
+- [x] S1-4: Made Copy button work with Clipboard API + visual feedback
+- [x] S1-5: Verified timeout exists (30s), improved error messages
+
+**Sprint 2 - Caching & Error Handling (COMPLETE):**
+- [x] S2-1: Added QueryCache for instant repeat responses
+- [x] S2-2: Added EmbeddingCache integrated into VectorStore
+- [x] S2-3: Retry logic with exponential backoff (centralized in queryClient)
+- [x] S2-4: Friendly error messages (error-messages.ts + gateway error handler)
+- [~] S2-5: Cache stats in health check (SKIPPED → moved to Sprint 5)
+
+**Deep Dive: Semantic Caching**
+- [x] Created semantic caching risk test (`test-semantic-risk.ts`)
+- [x] Ran tests showing dangerous false positives (enable vs disable dark mode: 93.2% similarity!)
+- [x] Added Sprint 11 to planning: Vector DB & Semantic Caching
+
+**Infrastructure:**
+- [x] Fixed dev script to auto-rebuild core/llm packages
+- [x] Added mentor rule: "ONE TICKET AT A TIME"
+- [x] Added Gemini API configuration to .env
+
+---
+
 ## Session: 2025-11-22
 
 ### ✅ Completed
@@ -45,6 +75,81 @@
 ---
 
 ## Key Learnings
+
+### Caching Strategies (NEW - Session 2025-11-25)
+
+**Two-Layer Cache Architecture:**
+```
+User Query
+    ↓
+┌─────────────────────────────────────────────────┐
+│ Layer 1: QueryCache (exact match)               │
+│   Key: normalized question hash                 │
+│   Value: full ChatResponse {answer, sources}    │
+│   Hit = instant response (skip everything!)     │
+└─────────────────────────────────────────────────┘
+    ↓ (cache miss)
+┌─────────────────────────────────────────────────┐
+│ Layer 2: EmbeddingCache (in VectorStore)        │
+│   Key: text hash                                │
+│   Value: embedding vector [768 numbers]         │
+│   Hit = skip Ollama API call (~100-300ms saved) │
+└─────────────────────────────────────────────────┘
+    ↓ (cache miss)
+    Generate embedding → Search → RAG → LLM
+```
+
+**LRU Cache Pattern:**
+- **LRU** = Least Recently Used (evicts oldest unused items)
+- **TTL** = Time To Live (auto-expire stale data)
+- **Hit Rate** = cache hits / total requests (measure effectiveness)
+- Used by Redis, Memcached, and every production system
+
+**Why Two Separate Caches?**
+| Cache | Level | What it saves | When it helps |
+|-------|-------|---------------|---------------|
+| QueryCache | High | Full RAG pipeline | Exact same question |
+| EmbeddingCache | Low | Embedding API call | Same text needs embedding |
+
+### Semantic Caching Risk (NEW - Deep Dive)
+
+**The Danger:** High embedding similarity ≠ Same answer needed!
+
+**Real Test Results:**
+```
+"How to enable dark mode?" vs "How to disable dark mode?"
+Similarity: 93.2%  →  ❌ WRONG CACHE HIT with 0.90 threshold!
+```
+
+**Why This Happens:**
+- Embeddings capture "what the text is about" (semantic meaning)
+- Both questions are "about dark mode" and "about how-to"
+- But the **intent is opposite** (enable vs disable)
+
+**Safe Production Approaches:**
+1. **Conservative Threshold (0.95+)** - Miss opportunities, never wrong
+2. **LLM Verification** - Ask small LLM "Are these the same question?"
+3. **Hybrid** - High threshold + keyword checking (enable/disable, add/remove)
+
+**Our Choice:** Exact-match QueryCache only (safest for onboarding docs)
+
+### File Modification Time (mtime) Pattern
+
+**Problem:** VectorStore was reloading from disk on every query (slow!)
+
+**Solution:** Track file's `mtimeMs` (modification timestamp)
+```typescript
+if (stats.mtimeMs > this.lastModifiedTime) {
+  await this.load();  // File changed, reload
+}
+// else: skip reload, use cached data
+```
+
+**Where This Pattern is Used:**
+- Build systems (webpack, tsc watch mode)
+- File sync tools (Dropbox, rsync)
+- Hot reload in development servers
+- Our VectorStore!
 
 ### Embeddings
 - **Purpose:** Convert text to numbers to compare meaning
@@ -289,3 +394,162 @@ packages/cli/               → User interface (to be built)
 - Providers organized by vendor (`ollama/`, future: `openai/`, `anthropic/`)
 - Clean imports and dependencies
 - Proper TypeScript declarations
+
+---
+
+## 📊 Session Assessment: 2025-11-25
+
+### Skills Demonstrated
+
+| Skill | Level | Evidence |
+|-------|-------|----------|
+| **Caching Patterns** | ⭐⭐⭐⭐ Strong | Built LRU cache, understands TTL, hit rates |
+| **System Design** | ⭐⭐⭐⭐ Strong | Two-layer cache architecture, mtime optimization |
+| **Critical Thinking** | ⭐⭐⭐⭐⭐ Excellent | Asked the RIGHT question about semantic caching risk |
+| **Testing Mindset** | ⭐⭐⭐⭐ Strong | Wanted to see real test data before trusting theory |
+| **Learning Initiative** | ⭐⭐⭐⭐⭐ Excellent | Paused sprint to deep-dive on interesting topic |
+
+### Key Moment of the Session
+
+**You asked:** "What happens if the user sends a query that's not similar but approximately similar?"
+
+This is a **senior engineer question**. Most developers blindly implement semantic caching because it sounds cool. You questioned the assumption and discovered a real production risk.
+
+### What You Learned Today
+
+1. **LRU Cache** - Industry-standard eviction pattern
+2. **TTL (Time To Live)** - Auto-expiring stale data
+3. **Two-Layer Caching** - QueryCache (high) + EmbeddingCache (low)
+4. **mtime Pattern** - Skip unnecessary disk reads
+5. **Semantic Caching Risk** - High similarity ≠ Same answer
+6. **False Positives** - The danger of trusting embeddings blindly
+
+### Progress Toward Senior Engineer
+
+```
+Mid-Level                                      Senior
+   |==========================================>|
+   ░░░░░░░░░░░░░░░░░░░████████████░░░░░░░░░░░░░
+                      ▲
+                  You are here
+
+Key indicator: Questioning assumptions, not just implementing
+```
+
+### Sprint 2 COMPLETE!
+
+All tasks done except S2-5 (Cache stats in health check) which was intentionally moved to Sprint 5.
+
+**Session 2025-11-26 Additions:**
+- [x] S2-3: Retry logic - centralized in `queryClient.ts` (queries + mutations)
+- [x] S2-4: Error handling layer - separate `gateway/errors/` module with gRPC status code mapping
+- [x] CORS configuration with environment variable
+- [x] Transport documentation (`docs/transport-and-sockets.md`)
+
+### Files Created/Modified This Session
+
+**New Files:**
+- `packages/core/src/cache/lru-cache.ts` - Generic LRU cache
+- `packages/core/src/cache/query-cache.ts` - Chat response cache
+- `packages/core/src/cache/embedding-cache.ts` - Embedding vector cache
+- `packages/core/src/cache/index.ts` - Cache exports
+- `packages/core/src/tests/test-semantic-risk.ts` - Semantic caching risk demo
+
+**Modified Files:**
+- `packages/core/src/vectorStore.ts` - Added EmbeddingCache + reloadIfChanged
+- `packages/core/src/chat.ts` - Added QueryCache integration
+- `packages/core/src/index.ts` - Export caches
+- `packages/web/src/modules/chat/views/chat.tsx` - Sources, copy button, localStorage
+- `package.json` - Dev script with watchers
+- `CLAUDE.md` - Added "ONE TICKET AT A TIME" rule
+- `SPRINT-PLANNING.md` - Added Sprint 11 (Vector DB & Semantic Caching)
+- `.env` / `.env.example` - Gemini configuration
+
+### Next Session Recommendation
+
+**Ready for Sprint 3: Document Ingestion & Validation**
+- S3-1: Accept file uploads (PDF, DOCX, TXT, MD)
+- S3-2: Validate file types, sizes, content
+- S3-3: Sanitize text content
+- S3-4: Extract text from PDF
+- S3-5: Show upload progress
+- S3-6: Document deduplication
+
+This sprint will teach you file handling, validation patterns, and building robust input pipelines - all critical skills for production systems.
+
+---
+
+## Session Assessment: 2025-11-26
+
+### Checkpoint Status
+
+| Sprint | Status | Completion |
+|--------|--------|------------|
+| Sprint 1 | COMPLETE | 100% |
+| Sprint 2 | COMPLETE | 100% (S2-5 moved to Sprint 5) |
+| Sprint 3 | NOT STARTED | 0% |
+
+**Overall Project Progress:** ~20% (2 of 10 sprints complete)
+
+### Skills Demonstrated This Session
+
+| Skill | Rating | Evidence |
+|-------|--------|----------|
+| **Debugging** | Strong | Identified retry wasn't working because mutations weren't configured |
+| **Architecture Decisions** | Strong | Chose centralized config over per-hook config (DRY principle) |
+| **Separation of Concerns** | Strong | Created dedicated error handler layer for gateway |
+| **Asking Questions** | Excellent | Deep-dived on transport agnostic concept until fully understood |
+| **Knowing When to Stop** | Excellent | Recognized feeling overwhelmed and requested checkpoint |
+
+### Honest Assessment
+
+**What Went Well:**
+- You correctly identified that retry logic needed to be in queryClient, not individual hooks
+- You pushed for deeper understanding of transport concepts rather than accepting surface-level explanations
+- You requested documentation for complex topics you knew you'd forget - this is professional behavior
+- You recognized when you were hitting cognitive overload and asked to pause
+
+**Areas for Improvement:**
+- Some concepts like Unix sockets and gRPC status codes may need revisiting - they were covered quickly near the end when you were already tired
+- The session was long and covered a lot of ground - consider shorter, more focused sessions
+
+**Key Learnings:**
+1. **React Query retry** - Must configure separately for queries AND mutations
+2. **gRPC Status Codes** - 0-16, transport agnostic, maps to HTTP
+3. **Unix Sockets** - File-based IPC, Linux/Mac only, faster than TCP
+4. **Health Checks** - Infrastructure polls them, not UI
+5. **Error Handler Layering** - Separate concerns between gateway and services
+
+### Senior Engineer Progress
+
+```
+Session Start                              Session End
+     |                                          |
+     ▼                                          ▼
+Mid ░░░░░░░░░░░░░░░████████████░░░░░░░░░░░░░░░░░ Senior
+                   ▲           ▲
+              Last session   This session
+                             (small but solid progress)
+```
+
+**Key Indicator:** You're developing the habit of questioning implementations and asking "why does it work this way?" This is the hallmark of a senior engineer mindset.
+
+### What's Different Now vs. Session Start
+
+Before this session:
+- Retry logic existed but wasn't working for mutations
+- Error handling was inline in routes
+- No documentation on transport concepts
+
+After this session:
+- Retry works for both queries AND mutations (centralized)
+- Dedicated error handler layer with gRPC status code mapping
+- CORS properly configured via environment variable
+- Transport documentation for future reference
+
+### Recommendation for Next Session
+
+1. **Start Fresh** - Don't try to immediately dive into Sprint 3 when tired
+2. **Review Transport Docs** - Quick skim of `docs/transport-and-sockets.md` before starting
+3. **Sprint 3 Focus** - File uploads and validation are practical, hands-on work
+4. **Shorter Session** - Consider 2-3 tickets per session to avoid overload

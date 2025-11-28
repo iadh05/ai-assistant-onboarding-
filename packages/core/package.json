@@ -10,12 +10,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@onboarding/cache": "file:../cache",
-    "@onboarding/events": "file:../events",
-    "@onboarding/llm": "file:../llm"
-  },
-  "devDependencies": {
-    "@types/node": "^24.10.1",
-    "typescript": "^5.3.0"
+    "@onboarding/cache": "*",
+    "@onboarding/events": "*",
+    "@onboarding/llm": "*"
   }
 }

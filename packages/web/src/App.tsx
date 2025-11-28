@@ -25,7 +25,7 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex h-screen bg-gray-50 overflow-hidden">
+      <div className="flex h-screen bg-gray-50">
         <Sidebar currentView={currentView} onViewChange={setCurrentView} />
         <main className="flex-1 flex flex-col h-full overflow-hidden relative">
           {renderView()}

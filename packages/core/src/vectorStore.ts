@@ -174,4 +174,22 @@ export class VectorStore {
   clearEmbeddingCache(): void {
     this.embeddingCache.clear();
   }
+
+  /**
+   * Clear all documents from the vector store
+   */
+  async clearAll(): Promise<number> {
+    const count = this.chunks.length;
+    this.chunks = [];
+    this.embeddingCache.clear();
+    await this.save();
+    return count;
+  }
+
+  /**
+   * Get document count
+   */
+  getDocumentCount(): number {
+    return this.chunks.length;
+  }
 }

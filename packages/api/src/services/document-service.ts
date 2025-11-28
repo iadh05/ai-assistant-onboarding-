@@ -51,10 +51,13 @@ const documentServiceImpl = {
       console.log(`[Document Service] Adding ${documents.length} document(s)`);
 
       let totalChunks = 0;
+      const documentIds: string[] = [];
+
       for (const doc of documents) {
         const chunks = chunkingService.chunkDocument(doc.content, doc.source);
         await vectorStore.addChunks(chunks);
         totalChunks += chunks.length;
+        documentIds.push(doc.source);
       }
 
       await vectorStore.save();
@@ -66,6 +69,32 @@ const documentServiceImpl = {
       callback(null, {
         chunks_added: totalChunks,
         message: `Successfully added ${documents.length} document(s) as ${totalChunks} chunks`,
+        document_ids: documentIds,
+      });
+    } catch (error) {
+      console.error('[Document Service] Error:', error);
+      callback({
+        code: grpc.status.INTERNAL,
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  },
+
+  async clearDocuments(
+    _call: grpc.ServerUnaryCall<any, any>,
+    callback: grpc.sendUnaryData<any>
+  ) {
+    try {
+      console.log('[Document Service] Clearing all documents...');
+      const chunksRemoved = await vectorStore.clearAll();
+      console.log(`[Document Service] Cleared ${chunksRemoved} chunks`);
+
+      // Emit event to notify subscribers
+      cacheEventBus.emitDocumentsChanged('DocumentService');
+
+      callback(null, {
+        chunks_removed: chunksRemoved,
+        message: `Successfully cleared ${chunksRemoved} chunks`,
       });
     } catch (error) {
       console.error('[Document Service] Error:', error);

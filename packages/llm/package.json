@@ -8,13 +8,5 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist"
-  },
-  "dependencies": {
-    "dotenv": "^17.2.3",
-    "ollama": "^0.5.11"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.5",
-    "typescript": "^5.7.3"
   }
 }
