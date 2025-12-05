@@ -4,6 +4,11 @@
   "description": "Shared API contracts (Protocol Buffers) for the onboarding chatbot",
   "type": "module",
   "main": "proto/chat.proto",
+  "scripts": {
+    "build": "echo 'Proto files - no build needed'",
+    "dev": "echo 'Proto files - no watch needed'",
+    "clean": "echo 'Proto files - no clean needed'"
+  },
   "files": [
     "proto/**/*.proto"
   ],

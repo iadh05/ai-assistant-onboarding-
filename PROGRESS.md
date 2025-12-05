@@ -553,3 +553,104 @@ After this session:
 2. **Review Transport Docs** - Quick skim of `docs/transport-and-sockets.md` before starting
 3. **Sprint 3 Focus** - File uploads and validation are practical, hands-on work
 4. **Shorter Session** - Consider 2-3 tickets per session to avoid overload
+
+---
+
+## Session Assessment: 2025-11-28
+
+### Sprint 3: Document Ingestion & Validation - COMPLETE ✅
+
+**What Was Built:**
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| Docker + MinIO | `docker-compose.yml` | S3-compatible object storage |
+| StorageService | `api/src/services/storage/` | Upload, download, streaming, hashing |
+| FileValidator | `core/src/ingestion/FileValidator.ts` | Type, size, magic bytes validation |
+| ContentExtractor | `core/src/ingestion/ContentExtractor.ts` | PDF, DOCX, TXT, MD text extraction |
+| TextSanitizer | `core/src/ingestion/TextSanitizer.ts` | Clean text for RAG |
+| DocumentDeduplicator | `core/src/ingestion/DocumentDeduplicator.ts` | Content hash duplicate detection |
+| Upload REST API | `api/src/gateway/routes/documents.ts` | Multipart upload + clear endpoint |
+| File Drop Zone UI | `web/src/modules/documents/components/` | Drag & drop + progress tracking |
+| Test Dataset | `test-data/` | 7 sample files + generation script |
+
+**Files Created This Session:**
+- `packages/api/src/services/storage/` (5 files - refactored from monolith)
+- `packages/core/src/ingestion/` (4 files)
+- `packages/web/src/modules/documents/components/` (2 files)
+- `test-data/` (7 test files + generator + package.json)
+- `docker-compose.yml`
+
+### Honest Assessment
+
+**What Went Well:**
+- You asked good clarifying questions about streams (`_transform`, `pipe`, who calls what)
+- You pushed back on unnecessary complexity (removed text tab, focused on file upload only)
+- You thought about future features (technical dictionary/glossary) without implementing them now
+- You identified when test files weren't working (PDF parsing issue) and we fixed it
+
+**What Struggled:**
+- **Stream concepts took multiple explanations** - `pipe`, `_transform`, consumer-driven flow weren't immediately clear. This is normal - streams are genuinely confusing, but worth revisiting.
+- **State synchronization issue** - Old "Return and Refund Policy" docs polluting RAG results. You didn't catch this before testing. A senior engineer would verify clean state before testing.
+- **Port confusion** - Tried `localhost:3000` when API is on `8080`. Small thing, but shows need to internalize the architecture.
+
+**What You Learned:**
+1. **Node.js Streams** - Transform streams, pipe connections, lazy pull pattern
+2. **S3/MinIO Integration** - AWS SDK, streaming uploads, content hashing
+3. **File Processing Pipeline** - Validate → Store → Extract → Sanitize → Dedup → Index
+4. **Binary File Handling** - Magic bytes, PDF/DOCX parsing libraries
+5. **State Drift Problem** - Multiple stores (MinIO, VectorStore, Dedup) can get out of sync
+
+**What You Should Review:**
+- Node.js streams documentation - the concepts came up repeatedly and weren't fully solid
+- The full upload pipeline flow - trace a file from drop to RAG query
+
+### Skills Assessment
+
+| Skill | Rating | Notes |
+|-------|--------|-------|
+| **Asking Questions** | ⭐⭐⭐⭐⭐ | Great stream questions, pushed for clarity |
+| **System Design** | ⭐⭐⭐⭐ | Good architecture decisions, proper separation |
+| **Debugging** | ⭐⭐⭐ | Found issues but sometimes needed hints |
+| **Stream Concepts** | ⭐⭐⭐ | Understood eventually, but needs reinforcement |
+| **Testing Mindset** | ⭐⭐⭐ | Tested but didn't verify clean state first |
+| **Knowing Scope** | ⭐⭐⭐⭐⭐ | Correctly deferred version management to post-MVP |
+
+### Senior Engineer Progress
+
+```
+Session Start                                    Session End
+     |                                                |
+     ▼                                                ▼
+Mid ░░░░░░░░░░░░░░░░░░░░░░████████████████████░░░░░░░ Senior
+                          ▲                    ▲
+                     Last session         This session
+                                    (+file handling, streams,
+                                     state sync awareness)
+```
+
+**Progress:** Solid. You built a real file upload pipeline with proper validation, extraction, and deduplication. The stream confusion is normal - these are genuinely hard concepts that even experienced developers struggle with.
+
+**Key Growth Indicator:** You're starting to think about data consistency (why old docs were appearing). This is a database/distributed systems concern that separates mid-level from senior engineers.
+
+### Sprint Progress Summary
+
+| Sprint | Status | Completion |
+|--------|--------|------------|
+| Sprint 1 | ✅ COMPLETE | 100% |
+| Sprint 2 | ✅ COMPLETE | 100% |
+| Sprint 3 | ✅ COMPLETE | Core features done, version mgmt deferred |
+| Sprint 4 | NOT STARTED | 0% |
+
+**Overall Project Progress:** ~30% (3 of 10 sprints complete)
+
+### Next Session: Sprint 4
+
+**Theme:** Query Understanding & Conversation Memory
+
+Focus areas:
+- Intent detection (how-to vs troubleshooting vs definition)
+- Query expansion (synonyms for better recall)
+- Conversation memory (sliding window)
+
+This will teach you NLP basics and context management - critical for making the chatbot actually useful.

@@ -1,0 +1,32 @@
+{
+  "name": "@onboarding/api",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "dev:all": "concurrently \"npm:dev:documents\" \"npm:dev:chat\" \"npm:dev:system\" \"npm:dev:rest-gateway\"",
+    "dev:documents": "tsx watch src/services/document-service.ts",
+    "dev:chat": "tsx watch src/services/chat-service.ts",
+    "dev:system": "tsx watch src/services/system-service.ts",
+    "dev:rest-gateway": "tsx watch src/gateway/rest-gateway.ts",
+    "dev:grpc-gateway": "tsx watch src/gateway/grpc-gateway.ts",
+    "start:all": "concurrently \"npm:start:documents\" \"npm:start:chat\" \"npm:start:system\" \"npm:start:rest-gateway\"",
+    "start:documents": "node dist/services/document-service.js",
+    "start:chat": "node dist/services/chat-service.js",
+    "start:system": "node dist/services/system-service.js",
+    "start:rest-gateway": "node dist/gateway/rest-gateway.js",
+    "start:grpc-gateway": "node dist/gateway/grpc-gateway.js",
+    "test:gateway": "node dist/test-gateway.js"
+  },
+  "dependencies": {
+    "@onboarding/cache": "*",
+    "@onboarding/contracts": "*",
+    "@onboarding/core": "*",
+    "@onboarding/events": "*",
+    "@onboarding/llm": "*",
+    "@onboarding/shared": "*"
+  }
+}

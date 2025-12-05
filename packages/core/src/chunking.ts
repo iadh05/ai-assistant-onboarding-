@@ -29,20 +29,63 @@ export class ChunkingService {
     // Step 1: Split by headings
     const sections = this.splitByHeadings(content);
 
-    // Step 2: Convert each section to chunk
-    sections.forEach((section, index) => {
-      chunks.push({
-        id: `${source}-chunk-${index}`,
-        text: section.text.trim(),
-        metadata: {
-          source,
-          heading: section.heading,
-          index,
-        },
-      });
-    });
+    // Step 2: Convert each section to chunks (respecting max size)
+    let chunkIndex = 0;
+    for (const section of sections) {
+      const sectionChunks = this.splitBySize(section.text.trim(), section.heading);
+
+      for (const text of sectionChunks) {
+        chunks.push({
+          id: `${source}-chunk-${chunkIndex}`,
+          text,
+          metadata: {
+            source,
+            heading: section.heading,
+            index: chunkIndex,
+          },
+        });
+        chunkIndex++;
+      }
+    }
 
     return chunks;
+  }
+
+  /**
+   * Split text into chunks respecting maxChunkSize with overlap
+   */
+  private splitBySize(text: string, _heading?: string): string[] {
+    if (text.length <= this.maxChunkSize) {
+      return [text];
+    }
+
+    const chunks: string[] = [];
+    let start = 0;
+
+    while (start < text.length) {
+      let end = start + this.maxChunkSize;
+
+      // Try to break at sentence or word boundary
+      if (end < text.length) {
+        const lastPeriod = text.lastIndexOf('. ', end);
+        const lastNewline = text.lastIndexOf('\n', end);
+        const breakPoint = Math.max(lastPeriod, lastNewline);
+
+        if (breakPoint > start + this.maxChunkSize / 2) {
+          end = breakPoint + 1;
+        }
+      }
+
+      chunks.push(text.slice(start, end).trim());
+      start = end - this.chunkOverlap;
+
+      // Prevent infinite loop
+      if (start >= text.length - this.chunkOverlap) {
+        break;
+      }
+    }
+
+    return chunks.filter(chunk => chunk.length > 0);
   }
 
   /**

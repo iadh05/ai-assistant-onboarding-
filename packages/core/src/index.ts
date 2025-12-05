@@ -32,6 +32,10 @@ export type {
   DeduplicationResult,
 } from './ingestion/index.js';
 
+// Memory
+export { ConversationMemory } from './memory/index.js';
+export type { Message, ConversationMemoryConfig } from './memory/index.js';
+
 // Re-export from @onboarding/cache for convenience
 export { LRUCache, QueryCache, EmbeddingCache, type CacheStats } from '@onboarding/cache';
 

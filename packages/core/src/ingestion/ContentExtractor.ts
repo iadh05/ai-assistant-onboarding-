@@ -60,16 +60,25 @@ export class ContentExtractor {
 
   private async extractPDF(buffer: Buffer): Promise<{ text: string; metadata: Partial<DocumentMetadata> }> {
     const pdfParse = (await import('pdf-parse')).default;
-    const data = await pdfParse(buffer);
 
-    return {
-      text: data.text,
-      metadata: {
-        pageCount: data.numpages,
-        title: data.info?.Title,
-        author: data.info?.Author,
-      },
-    };
+    try {
+      const data = await pdfParse(buffer);
+
+      return {
+        text: data.text,
+        metadata: {
+          pageCount: data.numpages,
+          title: data.info?.Title,
+          author: data.info?.Author,
+        },
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      if (message.includes('XRef') || message.includes('xref')) {
+        throw new Error('PDF is corrupted or has an invalid structure. Try re-exporting from the original application.');
+      }
+      throw error;
+    }
   }
 
   private async extractDOCX(buffer: Buffer): Promise<{ text: string; metadata: Partial<DocumentMetadata> }> {
